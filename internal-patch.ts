@@ -23,6 +23,7 @@ interface AssistantMessageComponentPrototype {
 	hideThinkingBlock: boolean;
 	markdownTheme: unknown;
 	hiddenThinkingLabel: string;
+	outputPad?: number;
 }
 
 export function assertPatchableAssistantMessageComponent(value: unknown): { prototype: AssistantMessageComponentPrototype } {
@@ -290,6 +291,7 @@ async function installPatch(): Promise<() => void> {
 		try {
 			this.contentContainer.clear();
 
+			const outputPad = this.outputPad ?? 1;
 			const thinkingBlocks = collectThinkingBlocks(message);
 			const hasVisibleContent = hasVisibleTextContent(message) || thinkingBlocks.length > 0;
 			if (hasVisibleContent) {
@@ -305,7 +307,7 @@ async function installPatch(): Promise<() => void> {
 
 			for (const content of message.content) {
 				if (content.type === "text" && content.text.trim()) {
-					this.contentContainer.addChild(new Markdown(content.text.trim(), 1, 0, this.markdownTheme as any));
+					this.contentContainer.addChild(new Markdown(content.text.trim(), outputPad, 0, this.markdownTheme as any));
 					continue;
 				}
 
@@ -326,11 +328,11 @@ async function installPatch(): Promise<() => void> {
 							? message.errorMessage
 							: "Operation aborted";
 					this.contentContainer.addChild(new Spacer(1));
-					this.contentContainer.addChild(new Text(theme.fg("error", abortMessage), 1, 0));
+					this.contentContainer.addChild(new Text(theme.fg("error", abortMessage), outputPad, 0));
 				} else if (message.stopReason === "error") {
 					const errorMessage = message.errorMessage || "Unknown error";
 					this.contentContainer.addChild(new Spacer(1));
-					this.contentContainer.addChild(new Text(theme.fg("error", `Error: ${errorMessage}`), 1, 0));
+					this.contentContainer.addChild(new Text(theme.fg("error", `Error: ${errorMessage}`), outputPad, 0));
 				}
 			}
 		} catch (error) {

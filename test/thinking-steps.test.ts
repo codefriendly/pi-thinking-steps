@@ -772,7 +772,7 @@ describe("integration patch", () => {
 		const release = await retainThinkingStepsPatch();
 		try {
 			const [{ AssistantMessageComponent }, { initTheme }] = await Promise.all([
-				importPiCodingAgentInternal<{ AssistantMessageComponent: new (message?: unknown, hideThinkingBlock?: boolean) => { render(width: number): string[]; setHiddenThinkingLabel(label: string): void } }>(
+				importPiCodingAgentInternal<{ AssistantMessageComponent: new (message?: unknown, hideThinkingBlock?: boolean) => { render(width: number): string[]; setHiddenThinkingLabel(label: string): void; outputPad?: number } }>(
 					PI_CODING_AGENT_INTERNAL_MODULES.assistantMessageComponent,
 				),
 				importPiCodingAgentInternal<{ initTheme: (name?: string, quiet?: boolean) => void }>(
@@ -809,10 +809,13 @@ describe("integration patch", () => {
 			setThinkingStepsMode("summary");
 			clearActiveThinkingState();
 			const component = new AssistantMessageComponent(message, false);
+			component.outputPad = 0;
+			component.setHiddenThinkingLabel("output-pad-zero");
 			let lines = component.render(100).map(stripAnsi);
 			assert.ok(lines.some((line) => line.includes("Thinking Steps · Summary")));
 			assert.equal(lines.filter((line) => line.startsWith("├─") || line.startsWith("└─")).length, 3);
-			assert.ok(lines.some((line) => line.includes("Final answer.")));
+			const finalAnswerLine = lines.find((line) => line.includes("Final answer."));
+			assert.equal(finalAnswerLine?.replace(/\x1b\][^\x07]*\x07/g, "").trimEnd(), "Final answer.");
 
 			setThinkingStepsMode("collapsed");
 			setActiveThinkingState({ active: true, messageTimestamp: 123, contentIndex: 0 });
