@@ -183,7 +183,7 @@ That patch layer is:
 
 This extension intentionally depends on Pi's current internal TUI implementation.
 
-Today, the patch relies on these internal modules in `@mariozechner/pi-coding-agent`:
+Today, the patch relies on these internal modules in `@earendil-works/pi-coding-agent`:
 
 - `dist/modes/interactive/components/assistant-message.js`
 - `dist/modes/interactive/theme/theme.js`

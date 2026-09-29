@@ -29,7 +29,7 @@ import {
 } from "../state.js";
 import type { ThinkingThemeLike } from "../types.js";
 import thinkingStepsExtension from "../index.js";
-import { Key } from "@mariozechner/pi-tui";
+import { Key } from "@earendil-works/pi-tui";
 
 function stripAnsi(text: string): string {
 	return text.replace(/\x1b\[[0-9;]*m/g, "");
@@ -318,7 +318,7 @@ describe("patch guards", () => {
 	it("reports a specific compatibility error when an internal module cannot be imported", async () => {
 		await assert.rejects(
 			() => importPiCodingAgentInternal("dist/modes/interactive/missing.js"),
-			/could not import internal module "@mariozechner\/pi-coding-agent\/dist\/modes\/interactive\/missing\.js"/,
+			/could not import internal module "@earendil-works\/pi-coding-agent\/dist\/modes\/interactive\/missing\.js"/,
 		);
 	});
 });
@@ -2895,7 +2895,7 @@ describe("Batch 2 regressions", () => {
 });
 
 describe("repo metadata contracts", () => {
-	it("keeps published files, pinned Pi dependencies, docs, and archived prompts aligned", async () => {
+	it("keeps published files, Pi peer dependencies, docs, and archived prompts aligned", async () => {
 		const packageJson = JSON.parse(await readFile("package.json", "utf8")) as {
 			version: string;
 			main: string;
@@ -2903,12 +2903,13 @@ describe("repo metadata contracts", () => {
 			pi?: { extensions?: string[] };
 			scripts: Record<string, string>;
 			license: string;
-			dependencies: Record<string, string>;
+			dependencies?: Record<string, string>;
+			peerDependencies: Record<string, string>;
 			devDependencies: Record<string, string>;
 		};
 		const packageLock = JSON.parse(await readFile("package-lock.json", "utf8")) as {
 			version: string;
-			packages?: Record<string, { version?: string; dependencies?: Record<string, string>; devDependencies?: Record<string, string> }>;
+			packages?: Record<string, { version?: string; peerDependencies?: Record<string, string>; devDependencies?: Record<string, string> }>;
 		};
 		for (const file of packageJson.files) {
 			await assert.doesNotReject(readFile(file, "utf8"));
@@ -2930,14 +2931,14 @@ describe("repo metadata contracts", () => {
 		assert.match(packageJson.scripts.test, /node --import tsx test\/summarizer-challenger\.test\.ts/);
 		assert.ok(packageJson.scripts.test.indexOf("test/thinking-steps.test.ts") < packageJson.scripts.test.indexOf("test/summarizer-challenger.test.ts"));
 		assert.equal(packageJson.license, "MIT");
-		assert.equal(packageJson.dependencies["@mariozechner/pi-ai"], "0.69.0");
-		assert.equal(packageJson.dependencies["@mariozechner/pi-coding-agent"], "0.69.0");
-		assert.equal(packageJson.dependencies["@mariozechner/pi-tui"], "0.69.0");
-		assert.equal(packageJson.devDependencies["@mariozechner/pi-ai"], undefined);
-		assert.equal(packageJson.devDependencies["@mariozechner/pi-coding-agent"], undefined);
-		assert.equal(packageJson.devDependencies["@mariozechner/pi-tui"], undefined);
-		assert.deepEqual(packageLock.packages?.[""]?.dependencies, packageJson.dependencies);
-		assert.ok(!Object.values(packageJson.dependencies).includes("latest"));
+		for (const name of ["pi-ai", "pi-coding-agent", "pi-tui"]) {
+			const packageName = `@earendil-works/${name}`;
+			assert.equal(packageJson.peerDependencies[packageName], "*");
+			assert.equal(packageJson.devDependencies[packageName], "0.99.1");
+		}
+		assert.equal(packageJson.dependencies, undefined);
+		assert.deepEqual(packageLock.packages?.[""]?.peerDependencies, packageJson.peerDependencies);
+		assert.deepEqual(packageLock.packages?.[""]?.devDependencies, packageJson.devDependencies);
 		assert.ok(!Object.values(packageJson.devDependencies).includes("latest"));
 
 		const license = await readFile("LICENSE", "utf8");
